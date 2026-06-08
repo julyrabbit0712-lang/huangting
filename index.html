@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>快捷服务</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
+    
+    /* 手机外框 */
+    .phone-frame{
+      width:375px;height:700px;margin:20px auto;
+      border:12px solid #1a1a1a;border-radius:40px;
+      background:linear-gradient(180deg, #FFE4D6 0%, #FFF0E8 50%, #FFE8E0 100%);
+      position:relative;overflow:hidden;
+      box-shadow:0 0 0 2px #333,0 20px 60px rgba(0,0,0,0.3);
+    }
+    .phone-frame::before{
+      content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+      width:150px;height:28px;background:#1a1a1a;border-radius:0 0 20px 20px;z-index:100;
+    }
+    
+    /* 快捷服务首页 */
+    .home-page{
+      position:absolute;top:0;left:0;right:0;bottom:0;
+      display:flex;flex-direction:column;
+      transition:opacity 0.3s;
+    }
+    
+    /* 导航栏 */
+    .nav-bar{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:44px 16px 12px;
+    }
+    .nav-back{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#333;cursor:pointer;}
+    .nav-title{font-size:17px;font-weight:600;color:#333;}
+    .nav-share{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#333;}
+    
+    /* 搜索区域 */
+    .search-area{padding:0 16px 16px;}
+    .input-field{
+      width:100%;height:40px;border:1px solid rgba(0,0,0,0.1);
+      border-radius:20px;padding:0 16px;font-size:14px;
+      background:rgba(255,255,255,0.8);outline:none;
+    }
+    
+    /* 热门标签 */
+    .hot-tags{padding:0 16px 16px;display:flex;gap:8px;flex-wrap:wrap;}
+    .tag{
+      padding:6px 14px;background:rgba(255,255,255,0.6);
+      border-radius:16px;font-size:13px;color:#666;cursor:pointer;
+      transition:all 0.2s;
+    }
+    .tag:hover,.tag.active{background:#FF6B00;color:#fff;}
+    
+    /* 服务卡片容器 */
+    .service-wrapper{
+      position:absolute;top:0;left:0;right:0;bottom:64px;
+      opacity:0;pointer-events:none;
+      transition:opacity 0.3s;
+      padding:0 16px 16px;
+      display:none;
+      flex-direction:column;
+      overflow-y:auto;
+    }
+    .service-wrapper.active{opacity:1;pointer-events:auto;display:flex;}
+    
+    /* 渐粉色外框 - 服务卡片 */
+    .service-outer-card{
+      background:linear-gradient(180deg, #FFF5EE 0%, #FFEDE5 100%);
+      border-radius:16px;
+      padding:12px;
+      box-shadow:0 4px 16px rgba(255,107,0,0.15);
+      position:absolute;
+      top:90px;left:16px;right:16px;
+      transform:translateY(120%);
+      opacity:0;
+      pointer-events:none;
+      max-height:calc(100% - 180px);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      transition:all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .service-outer-card.show{transform:translateY(0);opacity:1;pointer-events:auto;}
+    .service-outer-card.hide-up{transform:translateY(-120%);opacity:0;pointer-events:none;}
+    
+    /* 服务头部 */
+    .service-header{
+      display:flex;justify-content:space-between;align-items:center;
+      margin-bottom:12px;
+    }
+    .service-name{font-size:17px;font-weight:600;color:#333;}
+    .plate-switch{display:flex;align-items:center;gap:2px;font-size:13px;color:#666;cursor:pointer;}
+    .plate-switch .plate{color:#333;font-weight:500;}
+    .plate-switch::after{
+      content:'';width:14px;height:14px;
+      background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z'/%3E%3C/svg%3E") center no-repeat;
+      background-size:contain;
+    }
+    
+    /* 白色内框 */
+    .service-inner-card{
+      background:#fff;
+      border-radius:12px;
+      padding:0;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      flex-shrink:1;
+    }
+    .service-inner-card .section-header{
+      flex-shrink:0;
+      padding:12px 16px 8px;
+    }
+    .service-inner-card .form-section{
+      overflow-y:auto;
+      padding:0 16px;
+    }
+    
+    /* 区块标题 */
+    .section-title{font-size:13px;font-weight:600;color:#333;display:flex;align-items:center;gap:4px;}
+    .section-title::after{content:'ⓘ';font-size:9px;color:#B2B2B2;}
+    .section-desc{font-size:9px;color:#B2B2B2;margin-top:4px;line-height:1.5;}
+    
+    /* 表单行 */
+    .form-row{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid #F0F0F0;font-size:11px;}
+    .form-row:last-child{border-bottom:none;}
+    .form-label{color:#666;font-size:10px;}
+    .form-value{color:#999;text-align:right;}
+    
+    /* 双选切换栏 */
+    .toggle-group{display:flex;background:#F8F8F8;border-radius:8px;padding:3px;gap:3px;margin:0 16px;}
+    .toggle-option{flex:1;padding:6px;text-align:center;font-size:11px;color:#999;border-radius:6px;cursor:pointer;transition:all 0.2s;}
+    .toggle-option.active{background:#fff;color:#333;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+    
+    /* 底部按钮区 */
+    .card-footer{
+      padding:8px 16px;
+      border-top:1px solid #F0F0F0;
+      display:flex;justify-content:center;
+      flex-shrink:0;
+    }
+    .main-btn{
+      width:70%;max-width:160px;height:32px;
+      background:#FF6B00;border:none;border-radius:16px;
+      color:#fff;font-size:12px;font-weight:500;
+      cursor:pointer;box-shadow:0 2px 8px rgba(255,107,0,0.3);
+    }
+    
+    /* 车型选择 */
+    .car-type-item{
+      background:#F8F8F8;border-radius:12px;
+      padding:10px;margin-bottom:6px;
+      display:flex;align-items:center;gap:10px;
+      cursor:pointer;border:2px solid transparent;
+      transition:all 0.2s;
+    }
+    .car-type-item.active{background:#FFF5EE;border-color:#FF6B00;}
+    .car-icon{width:40px;height:40px;background:#E0E0E0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+    .car-type-item.active .car-icon{background:#FF6B00;}
+    .car-info{flex:1;}
+    .car-name{font-size:12px;font-weight:600;color:#333;margin-bottom:2px;}
+    .car-type-item.active .car-name{color:#FF6B00;}
+    .car-capacity{font-size:9px;color:#999;}
+    .car-price{font-size:13px;font-weight:600;color:#FF6B00;}
+    
+    /* 费用明细卡片 */
+    .fee-card{
+      background:linear-gradient(135deg, #FF8C42 0%, #FF6B00 100%);
+      border-radius:12px;padding:10px 14px;margin:0 16px 10px;
+      color:#fff;
+    }
+    .fee-row{display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px;}
+    .fee-row.discount{color:#FFE4D6;}
+    .fee-amount{font-size:18px;font-weight:600;margin-top:2px;}
+    
+    /* 进度步骤 */
+    .progress-steps{display:flex;justify-content:space-between;padding:12px;}
+    .step-item{display:flex;flex-direction:column;align-items:center;flex:1;}
+    .step-dot{width:20px;height:20px;border-radius:50%;background:#E0E0E0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#999;margin-bottom:4px;}
+    .step-dot.completed{background:#52C41A;color:#fff;}
+    .step-dot.current{background:#FF6B00;color:#fff;animation:pulse 1.5s infinite;}
+    .step-text{font-size:9px;color:#999;text-align:center;}
+    .step-text.completed{color:#52C41A;}
+    .step-text.current{color:#FF6B00;}
+    @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
+    
+    /* 底部工具栏 */
+    .bottom-bar{
+      position:absolute;bottom:0;left:0;right:0;
+      height:64px;background:#fff;
+      border-radius:20px 20px 0 0;
+      box-shadow:0 -4px 20px rgba(0,0,0,0.1);
+      display:flex;justify-content:space-around;align-items:center;
+      padding:0 16px;
+    }
+    .tab-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+    .tab-icon{width:24px;height:24px;background:#E0E0E0;border-radius:4px;}
+    .tab-item span{font-size:11px;color:#666;}
+    .voice-btn{
+      width:56px;height:56px;
+      background:linear-gradient(135deg, #FF6B00 0%, #FF4D4D 100%);
+      border-radius:50%;margin-top:-16px;
+      box-shadow:0 4px 12px rgba(255,107,0,0.4);
+      display:flex;align-items:center;justify-content:center;
+    }
+    .voice-btn::after{
+      content:'';width:24px;height:24px;
+      background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z'/%3E%3Cpath d='M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z'/%3E%3C/svg%3E") center no-repeat;
+      background-size:contain;
+    }
+    
+    /* 弹窗 */
+    .modal-overlay{
+      position:fixed;top:0;left:0;right:0;bottom:0;
+      background:rgba(0,0,0,0.4);z-index:200;
+      display:none;align-items:center;justify-content:center;
+    }
+    .modal-overlay.show{display:flex;}
+    .modal-card{
+      background:#fff;border-radius:16px;
+      padding:20px;width:280px;
+      box-shadow:0 10px 40px rgba(0,0,0,0.2);
+    }
+    .modal-title{font-size:16px;font-weight:600;color:#333;margin-bottom:12px;text-align:center;}
+    .modal-text{font-size:13px;color:#666;line-height:1.6;margin-bottom:16px;text-align:center;}
+    .modal-buttons{display:flex;gap:12px;}
+    .modal-btn{flex:1;padding:10px 16px;border-radius:20px;font-size:14px;cursor:pointer;text-align:center;}
+    .modal-btn.cancel{background:#F5F5F5;color:#333;border:none;}
+    .modal-btn.confirm{background:#FF6B00;color:#fff;border:none;}
+    
+    /* 上传区域 */
+    .upload-area{
+      height:80px;background:#F8F8F8;border-radius:8px;
+      border:2px dashed #E0E0E0;margin:0 16px 12px;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+    }
+    .upload-icon{font-size:24px;color:#CCC;margin-bottom:4px;}
+    .upload-text{font-size:12px;color:#999;}
+    
+    /* 雷达动画 */
+    .radar-container{
+      width:120px;height:120px;margin:20px auto;
+      position:relative;
+    }
+    .radar-pulse{
+      position:absolute;top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      width:20px;height:20px;background:#FF6B00;border-radius:50%;
+    }
+    .radar-pulse::before,.radar-pulse::after{
+      content:'';position:absolute;top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      width:100%;height:100%;
+      border:2px solid #FF6B00;border-radius:50%;
+      animation:radar 2s infinite;
+    }
+    .radar-pulse::after{animation-delay:0.5s;}
+    @keyframes radar{
+      0%{transform:translate(-50%,-50%) scale(1);opacity:1;}
+      100%{transform:translate(-50%,-50%) scale(6);opacity:0;}
+    }
+    
+    /* 司机卡片 */
+    .driver-card{
+      background:#F8F8F8;border-radius:12px;padding:12px;margin:0 16px 10px;
+      display:flex;align-items:center;gap:10px;
+    }
+    .driver-avatar{width:48px;height:48px;background:#E0E0E0;border-radius:50%;}
+    .driver-info{flex:1;}
+    .driver-name{font-size:13px;font-weight:600;color:#333;margin-bottom:2px;}
+    .driver-detail{font-size:10px;color:#999;}
+    .driver-rating{font-size:11px;color:#FF6B00;margin-top:4px;}
+    
+    /* 评价星星 */
+    .rating-stars{display:flex;justify-content:center;gap:6px;margin:10px 0;}
+    .star{width:28px;height:28px;background:#E0E0E0;border-radius:50%;cursor:pointer;transition:all 0.2s;}
+    .star.active{background:#FF6B00;}
+    
+    /* 评价标签 */
+    .rating-tags{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px;margin-bottom:10px;}
+    .rating-tag{padding:5px 10px;background:#F5F5F5;border-radius:12px;font-size:10px;color:#666;cursor:pointer;}
+    .rating-tag.active{background:#FFF5EE;color:#FF6B00;border:1px solid #FF6B00;}
+    
+    /* 身份证样式 */
+    .id-card-row{display:flex;gap:10px;padding:0 16px 12px;}
+    .id-card-item{flex:1;}
+    .id-card-img{height:60px;border-radius:6px;position:relative;overflow:hidden;border:1px solid #E0E0E0;}
+    .id-card-img.front{background:linear-gradient(135deg, #A8D8EA 0%, #7EC8E3 100%);}
+    .id-card-img.back{background:linear-gradient(135deg, #FFD93D 0%, #F4D03F 100%);}
+    .id-card-status{text-align:center;margin-top:4px;font-size:9px;color:#52C41A;}
+    
+    /* 时间轴 */
+    .timeline{padding:12px;}
+    .timeline-item{display:flex;gap:10px;margin-bottom:12px;}
+    .timeline-dot{width:10px;height:10px;background:#E0E0E0;border-radius:50%;margin-top:4px;}
+    .timeline-dot.active{background:#FF6B00;}
+    .timeline-dot.completed{background:#52C41A;}
+    .timeline-content{flex:1;}
+    .timeline-title{font-size:11px;color:#333;margin-bottom:2px;}
+    .timeline-desc{font-size:9px;color:#999;}
+    
+    /* 服务类型选择 */
+    .service-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 10px;}
+    .service-type-card{
+      background:#F8F8F8;border-radius:12px;padding:12px;
+      display:flex;flex-direction:column;align-items:center;gap:6px;
+      cursor:pointer;border:2px solid transparent;
+    }
+    .service-type-card.active{background:#FFF5EE;border-color:#FF6B00;}
+    .service-type-icon{font-size:28px;}
+    .service-type-name{font-size:12px;font-weight:600;color:#333;}
+    .service-type-desc{font-size:9px;color:#999;}
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <!-- 快捷服务首页 -->
+    <div class="home-page" id="homePage">
+      <div class="nav-bar">
+        <div class="nav-back">&lt;</div>
+        <div class="nav-title">快捷服务</div>
+        <div class="nav-share">⋮</div>
+      </div>
+      
+      <div class="search-area">
+        <input type="text" class="input-field" placeholder="输入您要办理的业务" id="serviceInput">
+      </div>
+      
+      <div class="hot-tags">
+        <span class="tag" onclick="startService('年检')">年检代办</span>
+        <span class="tag" onclick="startService('代驾')">代驾</span>
+        <span class="tag" onclick="startService('机场')">机场接送</span>
+      </div>
+    </div>
+    
+    <!-- 年检代办服务流程 -->
+    <div class="service-wrapper" id="nianshenWrapper">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="backToHome()">&lt;</div>
+        <div class="nav-title">快捷服务</div>
+        <div class="nav-share"></div>
+      </div>
+      <!-- 第1步：补充车辆信息 -->
+      <div class="service-outer-card show" id="nscard1">
+        <div class="service-header">
+          <div class="service-name">年检代办</div>
+          <div class="plate-switch"><span class="plate">粤B-9876G</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div class="section-header">
+            <div class="section-title">补充车辆信息</div>
+            <div class="section-desc">请您完善如下车辆座位数、商用性质、注册日期等信息</div>
+          </div>
+          <div style="overflow-y:auto;max-height:180px;">
+            <div class="form-row"><span class="form-label">使用性质</span><span class="form-value">非运营 &gt;</span></div>
+            <div class="form-row"><span class="form-label">驱动能源</span><span class="form-value">燃油 &gt;</span></div>
+            <div class="form-row"><span class="form-label">车辆类型</span><span class="form-value">客车 &gt;</span></div>
+            <div class="form-row"><span class="form-label">商用性质</span><span class="form-value">私家车 &gt;</span></div>
+            <div class="form-row"><span class="form-label">注册日期</span><span class="form-value">2026-04-22 &gt;</span></div>
+            <div class="toggle-group" style="margin:6px 16px 10px;">
+              <span class="toggle-option">是</span>
+              <span class="toggle-option active">否</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="nextStep('ns', 1, 2)">下一步</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 第2步：确认办理 -->
+      <div class="service-outer-card" id="nscard2">
+        <div class="service-header">
+          <div class="service-name">年检代办</div>
+          <div class="plate-switch"><span class="plate">确认办理</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div class="section-header">
+            <div class="section-title">证件上传</div>
+            <div class="section-desc">请上传相关证件材料</div>
+          </div>
+          <div style="overflow-y:auto;max-height:180px;padding:0 16px;">
+            <div class="id-card-row">
+              <div class="id-card-item">
+                <div class="id-card-img front"></div>
+                <div class="id-card-status">✓ 身份证人像面已上传</div>
+              </div>
+              <div class="id-card-item">
+                <div class="id-card-img back"></div>
+                <div class="id-card-status">✓ 身份证国徽面已上传</div>
+              </div>
+            </div>
+            <div style="background:#F0F9F4;border-radius:8px;padding:10px;display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <div style="width:36px;height:36px;background:#52C41A;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;">✓</div>
+              <div>
+                <div style="font-size:11px;color:#333;">交强险保单附件</div>
+                <div style="font-size:9px;color:#52C41A;">已上传</div>
+              </div>
+            </div>
+            <div class="toggle-group" style="margin-bottom:10px;">
+              <span class="toggle-option">官方电子标</span>
+              <span class="toggle-option active">纸质标</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="showModal()">下一步</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 第3步：资料审核中 -->
+      <div class="service-outer-card" id="nscard3">
+        <div class="service-header">
+          <div class="service-name">年检代办</div>
+          <div class="plate-switch"><span class="plate">审核中</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div style="text-align:center;padding:16px;">
+            <div style="font-size:12px;color:#333;margin-bottom:6px;">您的年检订单已提交</div>
+            <div style="font-size:10px;color:#999;line-height:1.6;">上传的资料将在1-3个工作日内完成审核</div>
+          </div>
+          <div class="progress-steps">
+            <div class="step-item">
+              <div class="step-dot completed">✓</div>
+              <div class="step-text completed">年检下单</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot current"></div>
+              <div class="step-text current">资料审核</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot"></div>
+              <div class="step-text">年检办理</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot"></div>
+              <div class="step-text">完成</div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="nextStep('ns', 3, 4)">下一步</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 第4步：办理成功 -->
+      <div class="service-outer-card" id="nscard4">
+        <div class="service-header">
+          <div class="service-name">年检代办</div>
+          <div class="plate-switch"><span class="plate">办理成功</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div style="text-align:center;padding:16px;">
+            <div style="width:56px;height:56px;background:#52C41A;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;">✓</div>
+            <div style="font-size:14px;font-weight:600;color:#333;margin-bottom:4px;">线上年检代办成功</div>
+            <div style="font-size:10px;color:#999;">请查收您的电子年检标</div>
+          </div>
+          <div class="progress-steps">
+            <div class="step-item">
+              <div class="step-dot completed">✓</div>
+              <div class="step-text completed">年检下单</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot completed">✓</div>
+              <div class="step-text completed">资料审核</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot completed">✓</div>
+              <div class="step-text completed">年检办理</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot completed">✓</div>
+              <div class="step-text completed">完成</div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="backToHome()">完成</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 代驾服务流程 -->
+    <div class="service-wrapper" id="daijiaWrapper">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="backToHome()">&lt;</div>
+        <div class="nav-title">快捷服务</div>
+        <div class="nav-share"></div>
+      </div>
+      <!-- 第1步：填写行程信息 -->
+      <div class="service-outer-card show" id="djcard1">
+        <div class="service-header">
+          <div class="service-name">代驾</div>
+          <div class="plate-switch"><span class="plate">即时代驾</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div class="section-header">
+            <div class="section-title">填写行程信息</div>
+            <div class="section-desc">请填写出发地和目的地</div>
+          </div>
+          <div style="overflow-y:auto;max-height:160px;">
+            <div class="form-row"><span class="form-label">出发地</span><span class="form-value">北京市朝阳区工体北路 &gt;</span></div>
+            <div class="form-row"><span class="form-label">目的地</span><span class="form-value">请输入目的地 &gt;</span></div>
+            <div class="toggle-group" style="margin:10px 16px;">
+              <span class="toggle-option active">酒后代驾</span>
+              <span class="toggle-option">商务代驾</span>
+            </div>
+            <div class="toggle-group" style="margin:0 16px 10px;">
+              <span class="toggle-option active">即时代驾</span>
+              <span class="toggle-option">预约代驾</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="nextStep('dj', 1, 2)">下一步</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 第2步：确认并呼叫 -->
+      <div class="service-outer-card" id="djcard2">
+        <div class="service-header">
+          <div class="service-name">代驾</div>
+          <div class="plate-switch"><span class="plate">确认呼叫</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div class="section-header">
+            <div class="section-title">费用确认</div>
+            <div class="section-desc">请确认行程信息和费用</div>
+          </div>
+          <div style="overflow-y:auto;max-height:160px;">
+            <div class="fee-card" style="margin-bottom:0;">
+              <div style="text-align:center;margin-bottom:6px;">
+                <div style="font-size:11px;opacity:0.9;">预估费用</div>
+                <div class="fee-amount">¥48</div>
+                <div style="font-size:9px;opacity:0.8;">8.2公里 · 约25分钟</div>
+              </div>
+              <div class="fee-row"><span>基础费</span><span>¥15</span></div>
+              <div class="fee-row"><span>里程费</span><span>¥20</span></div>
+              <div class="fee-row"><span>时长费</span><span>¥13</span></div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="nextStep('dj', 2, 3)">下一步</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 第3步：等待与联系 -->
+      <div class="service-outer-card" id="djcard3">
+        <div class="service-header">
+          <div class="service-name">代驾</div>
+          <div class="plate-switch"><span class="plate">等待接单</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div style="text-align:center;padding:16px;">
+            <div class="radar-container" style="margin:16px auto;width:100px;height:100px;"><div class="radar-pulse"></div></div>
+            <div style="font-size:12px;color:#333;margin-bottom:4px;">正在为您寻找司机</div>
+            <div style="font-size:10px;color:#999;">已向3公里内5名认证司机推送订单</div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="nextStep('dj', 3, 4)">下一步</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 第4步：司机已接单 -->
+      <div class="service-outer-card" id="djcard4">
+        <div class="service-header">
+          <div class="service-name">代驾</div>
+          <div class="plate-switch"><span class="plate">司机已接单</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div class="driver-card">
+            <div class="driver-avatar"></div>
+            <div class="driver-info">
+              <div class="driver-name">张师傅</div>
+              <div class="driver-detail">京AD12345 · 丰田凯美瑞</div>
+              <div class="driver-rating">★ 4.98分</div>
+            </div>
+          </div>
+          <div style="padding:0 16px 12px;">
+            <div style="font-size:10px;color:#666;text-align:center;margin-bottom:6px;">距离您约1.2公里，预计3分钟到达</div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="nextStep('dj', 4, 5)">下一步</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 第5步：支付与评价 -->
+      <div class="service-outer-card" id="djcard5">
+        <div class="service-header">
+          <div class="service-name">代驾</div>
+          <div class="plate-switch"><span class="plate">支付评价</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div class="section-header">
+            <div class="section-title">行程完成</div>
+            <div class="section-desc">安全送达，请支付并评价</div>
+          </div>
+          <div style="overflow-y:auto;max-height:180px;">
+            <div class="fee-card" style="margin-bottom:6px;">
+              <div style="text-align:center;margin-bottom:6px;">
+                <div style="font-size:11px;opacity:0.9;">实际费用</div>
+                <div class="fee-amount">¥52</div>
+              </div>
+              <div class="fee-row"><span>行程费</span><span>¥52</span></div>
+            </div>
+            <div class="rating-stars" style="margin:6px 0;">
+              <div class="star active"></div>
+              <div class="star active"></div>
+              <div class="star active"></div>
+              <div class="star active"></div>
+              <div class="star"></div>
+            </div>
+            <div class="rating-tags" style="margin-bottom:6px;">
+              <span class="rating-tag active">守时</span>
+              <span class="rating-tag active">驾驶平稳</span>
+              <span class="rating-tag">沟通礼貌</span>
+              <span class="rating-tag">车内整洁</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="backToHome()">完成</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 机场接送服务流程 -->
+    <div class="service-wrapper" id="jichangWrapper">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="backToHome()">&lt;</div>
+        <div class="nav-title">快捷服务</div>
+        <div class="nav-share"></div>
+      </div>
+      <!-- 第1步：选择服务类型 -->
+      <div class="service-outer-card show" id="jccard1">
+        <div class="service-header">
+          <div class="service-name">机场接送车</div>
+          <div class="plate-switch"><span class="plate">预约服务</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div class="section-header">
+            <div class="section-title">选择服务类型</div>
+            <div class="section-desc">请选择您需要的接送服务类型</div>
+          </div>
+          <div style="overflow-y:auto;max-height:140px;">
+            <div class="service-type-grid" style="padding-bottom:0;">
+              <div class="service-type-card active" onclick="selectServiceType(this)">
+                <div class="service-type-icon">🛬</div>
+                <div class="service-type-name">接机</div>
+                <div class="service-type-desc">机场接机服务</div>
+              </div>
+              <div class="service-type-card" onclick="selectServiceType(this)">
+                <div class="service-type-icon">🛫</div>
+                <div class="service-type-name">送机</div>
+                <div class="service-type-desc">机场送机服务</div>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="nextStep('jc', 1, 2)">下一步</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 第2步：填写行程信息 -->
+      <div class="service-outer-card" id="jccard2">
+        <div class="service-header">
+          <div class="service-name">机场接送车</div>
+          <div class="plate-switch"><span class="plate">接机</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div class="section-header">
+            <div class="section-title">填写行程信息</div>
+            <div class="section-desc">请输入航班和目的地信息</div>
+          </div>
+          <div style="overflow-y:auto;max-height:180px;">
+            <div class="form-row"><span class="form-label">到达机场</span><span class="form-value">上海浦东机场T2 &gt;</span></div>
+            <div class="form-row"><span class="form-label">航班号</span><span class="form-value">MU5101 &gt;</span></div>
+            <div class="form-row"><span class="form-label">到达日期</span><span class="form-value">2026-06-10 &gt;</span></div>
+            <div class="form-row"><span class="form-label">预计到达</span><span class="form-value">16:30 &gt;</span></div>
+            <div class="form-row"><span class="form-label">送达地址</span><span class="form-value">虹桥万豪酒店 &gt;</span></div>
+            <div style="padding:4px 16px;font-size:9px;color:#52C41A;">✓ 已自动获取航班信息：东方航空，北京-上海</div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="nextStep('jc', 2, 3)">下一步</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 第3步：选择车型 -->
+      <div class="service-outer-card" id="jccard3">
+        <div class="service-header">
+          <div class="service-name">机场接送车</div>
+          <div class="plate-switch"><span class="plate">选择车型</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div class="section-header">
+            <div class="section-title">选择车型</div>
+            <div class="section-desc">请选择适合您出行需求的车型</div>
+          </div>
+          <div style="overflow-y:auto;max-height:200px;padding:0 16px;">
+            <div class="car-type-item" onclick="selectCarType(this)" style="margin-bottom:5px;padding:8px 10px;">
+              <div class="car-icon" style="width:36px;height:36px;font-size:18px;">🚗</div>
+              <div class="car-info">
+                <div class="car-name">经济型</div>
+                <div class="car-capacity">4座 · 2件行李</div>
+              </div>
+              <div class="car-price">¥180</div>
+            </div>
+            <div class="car-type-item" onclick="selectCarType(this)" style="margin-bottom:5px;padding:8px 10px;">
+              <div class="car-icon" style="width:36px;height:36px;font-size:18px;">🚙</div>
+              <div class="car-info">
+                <div class="car-name">舒适型</div>
+                <div class="car-capacity">4座 · 3件行李</div>
+              </div>
+              <div class="car-price">¥220</div>
+            </div>
+            <div class="car-type-item active" onclick="selectCarType(this)" style="margin-bottom:5px;padding:8px 10px;">
+              <div class="car-icon" style="width:36px;height:36px;font-size:18px;">🚐</div>
+              <div class="car-info">
+                <div class="car-name">商务型</div>
+                <div class="car-capacity">6座 · 5件行李</div>
+              </div>
+              <div class="car-price">¥280</div>
+            </div>
+            <div class="car-type-item" onclick="selectCarType(this)" style="margin-bottom:5px;padding:8px 10px;">
+              <div class="car-icon" style="width:36px;height:36px;font-size:18px;">🚖</div>
+              <div class="car-info">
+                <div class="car-name">豪华型</div>
+                <div class="car-capacity">7座 · 6件行李</div>
+              </div>
+              <div class="car-price">¥450</div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="nextStep('jc', 3, 4)">下一步</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 第4步：填写乘车人信息 -->
+      <div class="service-outer-card" id="jccard4">
+        <div class="service-header">
+          <div class="service-name">机场接送车</div>
+          <div class="plate-switch"><span class="plate">乘车人</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div class="section-header">
+            <div class="section-title">填写乘车人</div>
+            <div class="section-desc">请输入乘车人联系信息</div>
+          </div>
+          <div style="overflow-y:auto;max-height:160px;">
+            <div class="form-row"><span class="form-label">联系人</span><span class="form-value">张三 &gt;</span></div>
+            <div class="form-row"><span class="form-label">手机号</span><span class="form-value">138****8888 &gt;</span></div>
+            <div class="form-row"><span class="form-label">乘车人数</span><span class="form-value">2人 &gt;</span></div>
+            <div class="toggle-group" style="margin:10px 16px;">
+              <span class="toggle-option">不需要</span>
+              <span class="toggle-option active">举牌接机</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="nextStep('jc', 4, 5)">下一步</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 第5步：确认订单 -->
+      <div class="service-outer-card" id="jccard5">
+        <div class="service-header">
+          <div class="service-name">机场接送车</div>
+          <div class="plate-switch"><span class="plate">确认订单</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div class="section-header">
+            <div class="section-title">确认订单</div>
+            <div class="section-desc">请核对订单信息</div>
+          </div>
+          <div style="overflow-y:auto;max-height:200px;">
+            <div style="background:#F8F8F8;border-radius:8px;padding:8px 12px;margin:0 16px 6px;">
+              <div style="font-size:10px;color:#666;margin-bottom:2px;">接机</div>
+              <div style="font-size:12px;font-weight:600;color:#333;">上海浦东机场T2</div>
+              <div style="font-size:9px;color:#999;margin:2px 0;">↓</div>
+              <div style="font-size:12px;font-weight:600;color:#333;">虹桥万豪酒店</div>
+            </div>
+            <div class="form-row" style="margin:0 16px;"><span class="form-label">服务时间</span><span class="form-value" style="color:#333;">2026-06-10 16:30</span></div>
+            <div class="form-row" style="margin:0 16px;"><span class="form-label">车型</span><span class="form-value" style="color:#333;">商务型MPV</span></div>
+            <div class="fee-card" style="margin-bottom:0;">
+              <div class="fee-row"><span>基础费用</span><span>¥280</span></div>
+              <div class="fee-row"><span>高速费</span><span>¥0</span></div>
+              <div class="fee-row"><span>停车费</span><span>¥0</span></div>
+              <div class="fee-row discount"><span>优惠券</span><span>-¥20</span></div>
+              <div style="border-top:1px solid rgba(255,255,255,0.3);margin-top:4px;padding-top:4px;display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:11px;">应付金额</span>
+                <span class="fee-amount" style="margin:0;">¥260</span>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="nextStep('jc', 5, 6)">下一步</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 第6步：支付成功/等待接单 -->
+      <div class="service-outer-card" id="jccard6">
+        <div class="service-header">
+          <div class="service-name">机场接送车</div>
+          <div class="plate-switch"><span class="plate">订单已创建</span></div>
+        </div>
+        <div class="service-inner-card">
+          <div style="text-align:center;padding:16px;">
+            <div style="width:56px;height:56px;background:#52C41A;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;">✓</div>
+            <div style="font-size:14px;font-weight:600;color:#333;margin-bottom:4px;">订单创建成功</div>
+            <div style="font-size:10px;color:#999;">等待司机接单</div>
+          </div>
+          <div class="radar-container" style="margin:16px auto;width:100px;height:100px;"><div class="radar-pulse"></div></div>
+          <div class="progress-steps">
+            <div class="step-item">
+              <div class="step-dot completed">✓</div>
+              <div class="step-text completed">订单已创建</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot current"></div>
+              <div class="step-text current">司机接单</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot"></div>
+              <div class="step-text">服务中</div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot"></div>
+              <div class="step-text">已完成</div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="main-btn" onclick="backToHome()">完成</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 底部工具栏 -->
+    <div class="bottom-bar">
+      <div class="tab-item">
+        <div class="tab-icon"></div>
+        <span>首页</span>
+      </div>
+      <div class="tab-item">
+        <div class="tab-icon"></div>
+        <span>订单</span>
+      </div>
+      <div class="voice-btn"></div>
+      <div class="tab-item">
+        <div class="tab-icon"></div>
+        <span>客服</span>
+      </div>
+      <div class="tab-item">
+        <div class="tab-icon"></div>
+        <span>我的</span>
+      </div>
+    </div>
+    
+    <!-- 弹窗 -->
+    <div class="modal-overlay" id="modal">
+      <div class="modal-card">
+        <div class="modal-title">年检费用变化提示</div>
+        <div class="modal-text">您好，选择办理"纸质版"年检标志，需跳转年检代办服务页面补充邮寄地址并支付邮费。是否需要继续办理？</div>
+        <div class="modal-buttons">
+          <button class="modal-btn cancel" onclick="hideModal()">返回修改</button>
+          <button class="modal-btn confirm" onclick="hideModal();nextStep('ns', 2, 3)">继续办理</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentService = '';
+    
+    // 开始服务
+    function startService(serviceName){
+      currentService = serviceName;
+      document.getElementById('homePage').style.opacity = '0';
+      setTimeout(() => {
+        document.getElementById('homePage').style.display = 'none';
+        if(serviceName.includes('年检')){
+          document.getElementById('nianshenWrapper').classList.add('active');
+        }else if(serviceName.includes('代驾')){
+          document.getElementById('daijiaWrapper').classList.add('active');
+        }else if(serviceName.includes('机场')){
+          document.getElementById('jichangWrapper').classList.add('active');
+        }
+      }, 300);
+    }
+    
+    // 下一步 - 卡片切换动画
+    function nextStep(prefix, from, to){
+      const currentCard = document.getElementById(prefix + 'card' + from);
+      const nextCard = document.getElementById(prefix + 'card' + to);
+      
+      currentCard.classList.remove('show');
+      currentCard.classList.add('hide-up');
+      
+      setTimeout(() => {
+        nextCard.classList.add('show');
+      }, 200);
+    }
+    
+    // 返回首页
+    function backToHome(){
+      document.getElementById('nianshenWrapper').classList.remove('active');
+      document.getElementById('daijiaWrapper').classList.remove('active');
+      document.getElementById('jichangWrapper').classList.remove('active');
+      
+      document.getElementById('homePage').style.display = 'flex';
+      setTimeout(() => {
+        document.getElementById('homePage').style.opacity = '1';
+      }, 50);
+      
+      // 重置所有卡片
+      setTimeout(() => {
+        document.querySelectorAll('.service-outer-card').forEach(card => {
+          card.classList.remove('show', 'hide-up');
+        });
+        document.querySelectorAll('[id$="card1"]').forEach(card => {
+          card.classList.add('show');
+        });
+      }, 500);
+    }
+    
+    // 显示弹窗
+    function showModal(){
+      document.getElementById('modal').classList.add('show');
+    }
+    
+    // 隐藏弹窗
+    function hideModal(){
+      document.getElementById('modal').classList.remove('show');
+    }
+    
+    // 选择服务类型
+    function selectServiceType(element){
+      document.querySelectorAll('.service-type-card').forEach(item => {
+        item.classList.remove('active');
+      });
+      element.classList.add('active');
+    }
+    
+    // 选择车型
+    function selectCarType(element){
+      document.querySelectorAll('.car-type-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      element.classList.add('active');
+    }
+    
+    // 输入框监听
+    document.getElementById('serviceInput').addEventListener('keypress', function(e){
+      if(e.key === 'Enter'){
+        const value = this.value.trim();
+        if(value.includes('年检')){
+          startService('年检');
+        }else if(value.includes('代驾')){
+          startService('代驾');
+        }else if(value.includes('机场')){
+          startService('机场');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
