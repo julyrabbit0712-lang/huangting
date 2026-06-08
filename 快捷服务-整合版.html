@@ -60,10 +60,11 @@
       opacity:0;pointer-events:none;
       transition:opacity 0.3s;
       padding:0 16px 16px;
-      display:flex;flex-direction:column;
+      display:none;
+      flex-direction:column;
       overflow-y:auto;
     }
-    .service-wrapper.active{opacity:1;pointer-events:auto;}
+    .service-wrapper.active{opacity:1;pointer-events:auto;display:flex;}
     
     /* 渐粉色外框 - 服务卡片 */
     .service-outer-card{
